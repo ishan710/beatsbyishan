@@ -1,40 +1,254 @@
-<button>start</button>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+  <title>Webcam</title>
+</head>
+
+  <style>
+    h1 {
+      font-family: sans-serif;
+      color: #333;
+    }
+    body {
+      margin: 50px;
+
+    }
+  #container {
+  
+	margin: 0px auto;
+	/* width: 500px;
+	height: 375px;
+	border: 10px #333 solid; */
+
+}
+#videoElement {
+  
+	width: 500px;
+	height: 375px;
+	background-color: #666;
+  align-items: center;
+}
+  </style>
+
+<body>
+
+
+  <center>
+  <h1> BEATS by Ishan</h1>
+  <div id="box">
+    <h3> Press keys 1, 2, 3 to add beats. Press 0 to stop</h3>
+  </div>
+  <div id="container">
+    <video autoplay="true" id="videoElement">
+    </video>
+  </div>
+  <div id="hands">
+    <h3> Raise left hand to increase the tempo, right hand to decrease</h3>
+  </div>
+  <button>start</button>
+</center>
+
+
+
+
+
+</script>
+<!-- These are the libraries i copy + pasted from the BlazePose documentation page -->
+<!-- https://github.com/tensorflow/tfjs-models/tree/master/pose-detection/src/blazepose_mediapipe -->
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
+<!-- here I'm importing the Tone.js library as well as netnet's helper library -->
+
 
 <script src="https://tonejs.github.io/build/Tone.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/numbro/2.0.5/languages/nn.min.js"></script>
+
 <script>
-  /* global Tone */
+  /* global poseDetection, Tone, nn */
+  let detector, video, osc, b
+  var bpm = 120
+  ctx = new window.AudioContext()
   
+  // this function creates a video element which streams our webcam feed and adds it to the page
+  // we asked OpenAI's codex to write this function (which we then refactored a bit)
+  // https://platform.openai.com/codex-javascript-sandbox
+  async function addVideo() {
+    // let video = document.querySelector("#video");
+    // video.setAttribute('autoplay', '')
+    // video.setAttribute('muted', '')
+    // video.setAttribute('playsinline', '')
+    // document.body.appendChild(video)
+    // const stream = await navigator.mediaDevices.getUserMedia({video: true})
+    // video.srcObject = stream    
+    // return video
+    var video = document.querySelector("#videoElement");
+    video.setAttribute('autoplay', '')
+    video.setAttribute('muted', '')
+    video.setAttribute('playsinline', '')
+    document.body.appendChild(video)
+
+    if (navigator.mediaDevices.getUserMedia) {
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then(function (stream) {
+          video.srcObject = stream;
+        })
+        .catch(function (err0r) {
+          console.log("Something went wrong!");
+        });
+    }
+    return video
+   
+  }
+  
+  // this function loads the AI model
+  async function setupModel () {
+    // here we pick which pre-trained model we want to use
+    const model = poseDetection.SupportedModels.BlazePose
+    // here we setup some "configuration" settings
+    const detectorConfig = {
+      runtime: 'mediapipe',
+      solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/pose'
+    }
+    // we combine the two to create the AI "detctor" function
+    const detector = await poseDetection.createDetector(model, detectorConfig)
+    return detector
+  }
+  
+  // our draw function (ie animation loop)
+  async function draw () {
+    // we first use the detector AI function to predict our "pose" based on the video frame
+		const poses = await detector.estimatePoses(video)
+    if (poses.length > 0) { // if the AI detects poses..
+        if (poses[0].keypoints[17].score > .8){
+          bpm+=1
+          console.log(poses[0].keypoints[17].name)
+        }
+    if (poses[0].keypoints[18].score > .8){
+        bpm-=1
+        console.log(poses[0].keypoints[18].name)
+      }
+      Tone.Transport.bpm.value = Math.min(bpm,1)
+    } else {
+    }
+    requestAnimationFrame(draw)
+  }
+
+
+  async function setup () {
+    // we create (&& begin playing) the Tone.js Oscillator
+    console.log("Loading")
+    document.body.style.background = 'pink'
+    document.body.style.display = 'grid'
+    document.body.style.justifyContent = 'center'
+    document.body.style.alignItems = 'center'
+    document.body.style.height = '100vh'
+    
+    // then we create our video element
+    video = await addVideo()
+
+    
+
+    
+    // then we create our AI function
+  	detector = await setupModel()
+    // then we log it to make sure the model loaded correctly
+    console.log('detector ready', detector)
+  
+    // then we wait a second before starting our animation loop
+    setTimeout(draw, 1000)  // this is a hack!
+    // ...to get around the "race conditions" issue
+  }
+
   const button = document.querySelector('button')
   const bass = new Tone.Player('bass1.mp3').toDestination()
   const snare = new Tone.Player('snare1.mp3').toDestination()
   const hhat = new Tone.Player('hhat1.mp3').toDestination()
-  let i = 0
+  const base_deeo = new Tone.Player('bass2.mp3').toDestination()
+  let i = 0, j = 0, k = 0
+ 
   
-  function beat (time) {
-    // create a variable for the number beat we're on
+  function beat_1 (time) {
     const b = (i % 4) + 1
     console.log(b)
-    // only play the bass on the first beat of each bar
-    if (b === 1) bass.start(time)
-    // only play the snare on the 3rd beat of each bar
-    if (b === 3) snare.start(time)
-    // play the high hat on every beat
-    hhat.start(time)
+    if (b === 1) {
+    bass.start(time)
+    document.body.style.background =  "red"
+    }
     i++
   }
-  
-  function toggle () {
-    // beats per minute
-    Tone.Transport.bpm.value = 120
-    // time signature, 4/4
-    Tone.Transport.timeSignature = [4, 4]
-    // trigger the beat function every qarter note
-    // (ie. 4 times in every bar)
-  	Tone.Transport.scheduleRepeat(beat, '4n')
-    // start the transport
-    Tone.Transport.start()
+
+  function beat_2 (time) {
+    const b = (j % 4) + 1
+    console.log(b)
+    if (b === 1){
+      bass.start(time)
+      document.body.style.background = "green"
+    }
+    if (b === 3) {
+      snare.start(time)
+      document.body.style.background = "blue"
+    }
+    j++
   }
+
+  function beat_3 (time) {
+    const b = (k % 4) + 1
+    console.log(b)
+    if (b === 4){ 
+      base_deeo.start(time)
+      document.body.style.background = "yellow"
+    }
+    k++
+  }
+
+  function toggle () {
+    Tone.start();
+    Tone.Transport.timeSignature = [4, 4]
+  }
+
+
+
+  function add_beat(e) {
+    if (e.key === '1'){
+    console.log("Pressing 1")
+    Tone.Transport.stop()
+    Tone.Transport.scheduleRepeat(beat_1, '4n')
+    Tone.Transport.start()
+    }
+    else if (e.key === '2'){
+    j = i
+    console.log("Pressing 2")
+    Tone.Transport.stop()
+    Tone.Transport.scheduleRepeat(beat_2, '4n')
+    Tone.Transport.start()
+    }
+    else if (e.key === '3'){
+    k = i
+    console.log("Pressing 34")
+    Tone.Transport.stop()
+    Tone.Transport.scheduleRepeat(beat_3, '4n')
+    Tone.Transport.start()
+    }
+    else {
+      e.key === '0'
+      console.log("Rest")
+      Tone.Transport.stop()
+      i = k = j = 0
+      bpm = 120
+    }  
+  }
+
   
   button.addEventListener('click', toggle)
 
+  window.addEventListener('load', setup)
+
+  window.addEventListener('keypress', add_beat)
+
 </script>
+
+</body>
+</html>
