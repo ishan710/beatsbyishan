@@ -17,10 +17,6 @@
   #container {
   
 	margin: 0px auto;
-	/* width: 500px;
-	height: 375px;
-	border: 10px #333 solid; */
-
 }
 #videoElement {
   
@@ -54,36 +50,19 @@
 
 
 </script>
-<!-- These are the libraries i copy + pasted from the BlazePose documentation page -->
-<!-- https://github.com/tensorflow/tfjs-models/tree/master/pose-detection/src/blazepose_mediapipe -->
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
-<!-- here I'm importing the Tone.js library as well as netnet's helper library -->
-
 
 <script src="https://tonejs.github.io/build/Tone.js"></script>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/numbro/2.0.5/languages/nn.min.js"></script>
 
 <script>
-  /* global poseDetection, Tone, nn */
   let detector, video, osc, b
   var bpm = 120
   ctx = new window.AudioContext()
-  
-  // this function creates a video element which streams our webcam feed and adds it to the page
-  // we asked OpenAI's codex to write this function (which we then refactored a bit)
-  // https://platform.openai.com/codex-javascript-sandbox
   async function addVideo() {
-    // let video = document.querySelector("#video");
-    // video.setAttribute('autoplay', '')
-    // video.setAttribute('muted', '')
-    // video.setAttribute('playsinline', '')
-    // document.body.appendChild(video)
-    // const stream = await navigator.mediaDevices.getUserMedia({video: true})
-    // video.srcObject = stream    
-    // return video
     var video = document.querySelector("#videoElement");
     video.setAttribute('autoplay', '')
     video.setAttribute('muted', '')
@@ -103,25 +82,25 @@
    
   }
   
-  // this function loads the AI model
+  
   async function setupModel () {
-    // here we pick which pre-trained model we want to use
+  
     const model = poseDetection.SupportedModels.BlazePose
-    // here we setup some "configuration" settings
+  
     const detectorConfig = {
       runtime: 'mediapipe',
       solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/pose'
     }
-    // we combine the two to create the AI "detctor" function
+  
     const detector = await poseDetection.createDetector(model, detectorConfig)
     return detector
   }
   
-  // our draw function (ie animation loop)
+  
   async function draw () {
-    // we first use the detector AI function to predict our "pose" based on the video frame
+  
 		const poses = await detector.estimatePoses(video)
-    if (poses.length > 0) { // if the AI detects poses..
+    if (poses.length > 0) { 
         if (poses[0].keypoints[17].score > .8){
           bpm+=1
           console.log(poses[0].keypoints[17].name)
@@ -138,28 +117,20 @@
 
 
   async function setup () {
-    // we create (&& begin playing) the Tone.js Oscillator
     console.log("Loading")
     document.body.style.background = 'pink'
     document.body.style.display = 'grid'
     document.body.style.justifyContent = 'center'
     document.body.style.alignItems = 'center'
     document.body.style.height = '100vh'
-    
-    // then we create our video element
     video = await addVideo()
 
-    
-
-    
-    // then we create our AI function
   	detector = await setupModel()
-    // then we log it to make sure the model loaded correctly
+
     console.log('detector ready', detector)
   
-    // then we wait a second before starting our animation loop
-    setTimeout(draw, 1000)  // this is a hack!
-    // ...to get around the "race conditions" issue
+
+    setTimeout(draw, 1000)  
   }
 
   const button = document.querySelector('button')
