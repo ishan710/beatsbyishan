@@ -130,7 +130,7 @@
         bpm-=1
         console.log(poses[0].keypoints[18].name)
       }
-      Tone.Transport.bpm.value = Math.min(bpm,1)
+      Tone.Transport.bpm.value = Math.max(bpm,1)
     } else {
     }
     requestAnimationFrame(draw)
