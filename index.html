@@ -1,0 +1,40 @@
+<button>start</button>
+
+<script src="https://tonejs.github.io/build/Tone.js"></script>
+<script>
+  /* global Tone */
+  
+  const button = document.querySelector('button')
+  const bass = new Tone.Player('bass1.mp3').toDestination()
+  const snare = new Tone.Player('snare1.mp3').toDestination()
+  const hhat = new Tone.Player('hhat1.mp3').toDestination()
+  let i = 0
+  
+  function beat (time) {
+    // create a variable for the number beat we're on
+    const b = (i % 4) + 1
+    console.log(b)
+    // only play the bass on the first beat of each bar
+    if (b === 1) bass.start(time)
+    // only play the snare on the 3rd beat of each bar
+    if (b === 3) snare.start(time)
+    // play the high hat on every beat
+    hhat.start(time)
+    i++
+  }
+  
+  function toggle () {
+    // beats per minute
+    Tone.Transport.bpm.value = 120
+    // time signature, 4/4
+    Tone.Transport.timeSignature = [4, 4]
+    // trigger the beat function every qarter note
+    // (ie. 4 times in every bar)
+  	Tone.Transport.scheduleRepeat(beat, '4n')
+    // start the transport
+    Tone.Transport.start()
+  }
+  
+  button.addEventListener('click', toggle)
+
+</script>
