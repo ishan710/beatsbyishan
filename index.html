@@ -12,38 +12,46 @@
     }
     body {
       margin: 50px;
-
-    }
+      filter: blur("0px");
+      }
   #container {
-  
 	margin: 0px auto;
-}
-#videoElement {
-  
-	width: 500px;
-	height: 375px;
-	background-color: #666;
-  align-items: center;
-}
+  } 
+  #videoElement {
+    width: 500px;
+    height: 500px;
+    background-color: rgb(118, 104, 104);
+    align-items: center;
+  }
+  #title{
+    font-family: sans-serif;
+    font-size: 50px;
+  }
   </style>
 
 <body>
 
-
   <center>
-  <h1> BEATS by Ishan</h1>
+  <h1 id="title"> BEATS by Ishan</h1>
   <div id="box">
-    <h3> Press keys 1, 2, 3 to add beats. Press 0 to stop</h3>
+    <h2> Press keys 1, 2, 3 to add beats. Press 0 to stop</h3>
   </div>
   <div id="container">
     <video autoplay="true" id="videoElement">
     </video>
   </div>
+  <div id="tempo"></div>
   <div id="hands">
-    <h3> Raise left hand to increase the tempo, right hand to decrease</h3>
+    <h2> Raise left hand to increase the tempo, right hand to decrease</h3>
+  </div>
+  <div id="hands">
+    <h3> First, for the hand recognition model to work correctly, you will have to annoyingly inspect element, open the console, and reload</h3>
   </div>
   <button>start</button>
-</center>
+  </center>
+
+
+
 
 
 
@@ -54,14 +62,13 @@
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
-
 <script src="https://tonejs.github.io/build/Tone.js"></script>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/numbro/2.0.5/languages/nn.min.js"></script>
 
 <script>
   let detector, video, osc, b
   var bpm = 120
-  ctx = new window.AudioContext()
+  var temp_blur = 0
   async function addVideo() {
     var video = document.querySelector("#videoElement");
     video.setAttribute('autoplay', '')
@@ -96,21 +103,31 @@
     return detector
   }
   
-  
+  const fileContentDiv = document.getElementById('tempo');
   async function draw () {
   
 		const poses = await detector.estimatePoses(video)
     if (poses.length > 0) { 
         if (poses[0].keypoints[17].score > .8){
           bpm+=1
+          temp_blur+= .1
           console.log(poses[0].keypoints[17].name)
         }
     if (poses[0].keypoints[18].score > .8){
         bpm-=1
+        temp_blur-= .1
         console.log(poses[0].keypoints[18].name)
       }
+
       Tone.Transport.bpm.value = Math.max(bpm,1)
-    } else {
+      fileContentDiv.innerHTML = "Tempo: " + bpm
+
+      var title = document.querySelector("body");
+      title.style.filter = "blur(" + temp_blur + "px)";
+    }
+      
+      
+    else {
     }
     requestAnimationFrame(draw)
   }
@@ -126,12 +143,21 @@
     video = await addVideo()
 
   	detector = await setupModel()
+    var myDiv = document.getElementById("videoElement");
 
-    console.log('detector ready', detector)
-  
-
+    if (detector){
+      myDiv.style.border = "10px solid green"
+      console.log('detector ready', detector)
+    }
+    else{
+      myDiv.style.border = "10px solid red"
+      console.log('detector not', detector)
+      window.location.reload()
+    }
     setTimeout(draw, 1000)  
   }
+
+
 
   const button = document.querySelector('button')
   const bass = new Tone.Player('bass1.mp3').toDestination()
@@ -140,7 +166,6 @@
   const base_deeo = new Tone.Player('bass2.mp3').toDestination()
   let i = 0, j = 0, k = 0
  
-  
   function beat_1 (time) {
     const b = (i % 4) + 1
     console.log(b)
@@ -211,6 +236,12 @@
       bpm = 120
     }  
   }
+
+
+
+
+
+
 
   
   button.addEventListener('click', toggle)
