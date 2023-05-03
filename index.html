@@ -1,9 +1,11 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 
   <title>Webcam</title>
 </head>
+<!-- Define the styles for the HTML elements -->
 
   <style>
     h1 {
@@ -14,15 +16,12 @@
       margin: 50px;
       filter: blur("0px");
       }
-  #container {
-	margin: 0px auto;
-  } 
-  #videoElement {
-    width: 500px;
-    height: 500px;
-    background-color: rgb(118, 104, 104);
-    align-items: center;
-  }
+#videoElement {
+  width: 80%;
+  height: 80%;
+  background-color: rgb(118, 104, 104);
+  place-content: center;
+}
   #title{
     font-family: sans-serif;
     font-size: 50px;
@@ -30,22 +29,23 @@
   </style>
 
 <body>
+  <!-- Add the title and instructions for adding beats and using the hand recognition model -->
 
   <center>
   <h1 id="title"> BEATS by Ishan</h1>
   <div id="box">
     <h2> Press keys 1, 2, 3 to add beats. Press 0 to stop</h3>
   </div>
-  <div id="container">
+  <!-- <div id="container"> -->
     <video autoplay="true" id="videoElement">
     </video>
-  </div>
+  <!-- </div> -->
   <div id="tempo"></div>
   <div id="hands">
-    <h2> Raise left hand to increase the tempo, right hand to decrease</h3>
+    <h2> Wait for the camera border to turn Green. Then raise left hand to increase the tempo, right hand to decrease</h3>
   </div>
   <div id="hands">
-    <h3> First, for the hand recognition model to work correctly, you will have to annoyingly inspect element, open the console, and reload</h3>
+    <h3> Sometimes, for the hand recognition model to work correctly, you will have to annoyingly inspect element, open the console, and reload</h3>
   </div>
   <button>start</button>
   </center>
@@ -56,6 +56,7 @@
 
 
 
+<!-- Include the necessary JavaScript libraries -->
 
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose"></script>
@@ -69,6 +70,8 @@
   let detector, video, osc, b
   var bpm = 120
   var temp_blur = 0
+
+  // Function to add the video to the HTML body
   async function addVideo() {
     var video = document.querySelector("#videoElement");
     video.setAttribute('autoplay', '')
@@ -89,49 +92,52 @@
    
   }
   
-  
+  // Function to setup the hand recognition model
+  // Taken from netnets.js
+
   async function setupModel () {
-  
     const model = poseDetection.SupportedModels.BlazePose
-  
     const detectorConfig = {
       runtime: 'mediapipe',
       solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/pose'
     }
-  
     const detector = await poseDetection.createDetector(model, detectorConfig)
     return detector
   }
   
   const fileContentDiv = document.getElementById('tempo');
-  async function draw () {
   
+  
+  // Function to reads the video feed and detects the hand
+  // and based on that adjusts the tempo and blur
+  async function draw () {
 		const poses = await detector.estimatePoses(video)
     if (poses.length > 0) { 
-        if (poses[0].keypoints[17].score > .8){
+      if (poses[0].keypoints[17].score > .8)
+        {
           bpm+=1
           temp_blur+= .1
           console.log(poses[0].keypoints[17].name)
         }
-    if (poses[0].keypoints[18].score > .8){
-        bpm-=1
-        temp_blur-= .1
-        console.log(poses[0].keypoints[18].name)
-      }
+      if (poses[0].keypoints[18].score > .8)
+        {
+          bpm-=1
+          temp_blur-= .1
+          console.log(poses[0].keypoints[18].name)
+        }
 
       Tone.Transport.bpm.value = Math.max(bpm,1)
       fileContentDiv.innerHTML = "Tempo: " + bpm
-
       var title = document.querySelector("body");
       title.style.filter = "blur(" + temp_blur + "px)";
     }
-      
-      
-    else {
-    }
     requestAnimationFrame(draw)
   }
-
+  
+  function wait(ms) 
+  {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
 
   async function setup () {
     console.log("Loading")
@@ -141,19 +147,12 @@
     document.body.style.alignItems = 'center'
     document.body.style.height = '100vh'
     video = await addVideo()
-
-  	detector = await setupModel()
+   	detector = await setupModel()
     var myDiv = document.getElementById("videoElement");
-
-    if (detector){
-      myDiv.style.border = "10px solid green"
-      console.log('detector ready', detector)
-    }
-    else{
-      myDiv.style.border = "10px solid red"
-      console.log('detector not', detector)
-      window.location.reload()
-    }
+    // wait 5 second for the model to be ready
+    await wait(5000);
+    myDiv.style.border = "10px solid green"
+    console.log('detector ready', detector)
     setTimeout(draw, 1000)  
   }
 
@@ -163,9 +162,11 @@
   const bass = new Tone.Player('bass1.mp3').toDestination()
   const snare = new Tone.Player('snare1.mp3').toDestination()
   const hhat = new Tone.Player('hhat1.mp3').toDestination()
+  const hhat2 = new Tone.Player('hhat2.mp3').toDestination()
   const base_deeo = new Tone.Player('bass2.mp3').toDestination()
   let i = 0, j = 0, k = 0
  
+  // setting up three different beats that correspond to the three different keys
   function beat_1 (time) {
     const b = (i % 4) + 1
     console.log(b)
@@ -179,10 +180,6 @@
   function beat_2 (time) {
     const b = (j % 4) + 1
     console.log(b)
-    if (b === 1){
-      bass.start(time)
-      document.body.style.background = "green"
-    }
     if (b === 3) {
       snare.start(time)
       document.body.style.background = "blue"
@@ -193,7 +190,7 @@
   function beat_3 (time) {
     const b = (k % 4) + 1
     console.log(b)
-    if (b === 4){ 
+    if (b === 2){ 
       base_deeo.start(time)
       document.body.style.background = "yellow"
     }
@@ -207,6 +204,7 @@
 
 
 
+  // Function to add beats based on the key pressed
   function add_beat(e) {
     if (e.key === '1'){
     console.log("Pressing 1")
@@ -215,18 +213,18 @@
     Tone.Transport.start()
     }
     else if (e.key === '2'){
-    j = i
-    console.log("Pressing 2")
-    Tone.Transport.stop()
-    Tone.Transport.scheduleRepeat(beat_2, '4n')
-    Tone.Transport.start()
+      j = i
+      console.log("Pressing 2")
+      Tone.Transport.stop()
+      Tone.Transport.scheduleRepeat(beat_2, '4n')
+      Tone.Transport.start()
     }
     else if (e.key === '3'){
-    k = i
-    console.log("Pressing 34")
-    Tone.Transport.stop()
-    Tone.Transport.scheduleRepeat(beat_3, '4n')
-    Tone.Transport.start()
+      k = i
+      console.log("Pressing 3")
+      Tone.Transport.stop()
+      Tone.Transport.scheduleRepeat(beat_3, '4n')
+      Tone.Transport.start()
     }
     else {
       e.key === '0'
